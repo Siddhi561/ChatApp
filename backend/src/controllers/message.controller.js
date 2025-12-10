@@ -3,6 +3,7 @@ import { getReceiverSocketId, io } from "../lib/socket.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 
+// Get all contacts controller
 export const getAllContacts = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
@@ -15,6 +16,8 @@ export const getAllContacts = async (req, res) => {
   }
 };
 
+
+// Get messages between logged-in user and another user by their ID
 export const getMessagesByUserId = async (req, res) => {
   try {
     const myId = req.user._id;
@@ -22,6 +25,9 @@ export const getMessagesByUserId = async (req, res) => {
 
     const messages = await Message.find({
       $or: [
+
+        // messages sent by me to the other user
+
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
@@ -34,6 +40,8 @@ export const getMessagesByUserId = async (req, res) => {
   }
 };
 
+
+// Send a message from logged-in user to another user by their ID
 export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
@@ -67,6 +75,8 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
+
+    // Emit the new message to the receiver if they are connected via Socket.io
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
@@ -79,6 +89,8 @@ export const sendMessage = async (req, res) => {
   }
 };
 
+
+// Get chat partners of the logged-in user
 export const getChatPartners = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
@@ -88,6 +100,8 @@ export const getChatPartners = async (req, res) => {
       $or: [{ senderId: loggedInUserId }, { receiverId: loggedInUserId }],
     });
 
+
+    // extract unique user IDs of chat partners
     const chatPartnerIds = [
       ...new Set(
         messages.map((msg) =>
@@ -98,6 +112,8 @@ export const getChatPartners = async (req, res) => {
       ),
     ];
 
+
+    // fetch user details of chat partners
     const chatPartners = await User.find({ _id: { $in: chatPartnerIds } }).select("-password");
 
     res.status(200).json(chatPartners);

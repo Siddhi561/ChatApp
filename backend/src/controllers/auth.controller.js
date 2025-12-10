@@ -53,6 +53,8 @@ export const signup = async (req, res) => {
         profilePic: newUser.profilePic,
       });
 
+
+      // Send welcome email
       try {
         await sendWelcomeEmail(savedUser.email, savedUser.fullName, ENV.CLIENT_URL);
       } catch (error) {
@@ -67,6 +69,7 @@ export const signup = async (req, res) => {
   }
 };
 
+// Login controller
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -96,17 +99,21 @@ export const login = async (req, res) => {
   }
 };
 
+// Logout controller
 export const logout = (_, res) => {
   res.cookie("jwt", "", { maxAge: 0 });
   res.status(200).json({ message: "Logged out successfully" });
 };
 
+
+// Update Profile controller
 export const updateProfile = async (req, res) => {
   try {
     const { profilePic } = req.body;
     if (!profilePic) return res.status(400).json({ message: "Profile pic is required" });
 
-    const userId = req.user._id;
+    const userId = req.user._id; 
+    // req.user is set in auth.middleware.js
 
     const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
